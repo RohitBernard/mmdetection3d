@@ -55,34 +55,12 @@ def main():
     # build the model from a config file and a checkpoint file
     model = init_model(args.config, args.checkpoint, device=args.device)
 
-    #####
-    # TODO: 
-    # read image using cv / from video 
-    # modify inference.py 
-
-    # path_to_data = "/mnt/sdb1/siemens/mmdetection3d/data/kitti/training/image_2"
-    # f = open(args.ann)
-    # json_data = json.load(f)
-
-    # for image in json_data['images']:
-    #     start_time = time.time()
-    #     filename = image['file_name'].split("/")[-1]
-    #     img = cv2.imread(os.path.join(path_to_data, filename))
-    #     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    #     result, data = inference(model, img, image)
-    #     print("Inference time is", time.time() - start_time)
-    #     data['img_metas'][0][0]['filename'] = os.path.join(path_to_data, filename)
-    #     show_result_meshlab(
-    #     data,
-    #     result,
-    #     args.out_dir,
-    #     args.score_thr,
-    #     show=args.show,
-    #     snapshot=args.snapshot,
-    #     task='mono-det')
-
     f = open(args.ann)
     json_data = json.load(f)
+
+    #####
+    # RUN INFERENCE ON A VIDEO
+    #####
 
     # cap = cv2.VideoCapture('/mnt/sdb1/siemens/mmdetection3d/test_siemens/Movie_001.webm')
     # while cap.isOpened():
@@ -100,41 +78,22 @@ def main():
     # cap.release()
     # cv2.destroyAllWindows()
 
-    # with open('data/siemens_factory/siemens_val.pkl', 'rb') as f:
-    #     data = pickle.load(f)
+    #####
+    # RUN INFERENCE ON A SET OF IMAGES
+    #####
 
-    # for file in data[:15]:
-    #     print(file['annos'])
-    #     img = cv2.imread(file['image']['image_path'])
-    #     result, data = inference(model, img, json_data)
-    #     print(result)
-    #     draw_bboxes(img, result, json_data["cam_intrinsic"])
-    #     if cv2.waitKey(0) == ord('q'):
-    #         break
-    dir = '/mnt/sdb1/siemens/Siemens-Titanium/Simulator/Assets/CameraCaptures'
-    for file in os.listdir(dir):
-        print(file)
-        img = cv2.imread(os.path.join(dir,file))
+    root = "Data/Sim_GT_Data"
+    with open(os.path.join(root, "gt_data.json"), 'rb') as f:
+        data = json.load(f)
+
+    for d in data["data"]:
+        img = cv2.imread(root+d["filename"])
         result, data = inference(model, img, json_data)
         print(result)
         draw_bboxes(img, result, json_data["cam_intrinsic"])
         if cv2.waitKey(0) == ord('q'):
             break
 
-
-    #####
-    # test a single image
-    # result, data = inference_mono_3d_detector(model, args.image, args.ann)
-    # show the results
-    # print("Smoke results", result)
-    # show_result_meshlab(
-    #     data,
-    #     result,
-    #     args.out_dir,
-    #     args.score_thr,
-    #     show=args.show,
-    #     snapshot=args.snapshot,
-    #     task='mono-det')
 
 def inference(model, image, img_info):
     """Inference image with the monocular 3D detector.
