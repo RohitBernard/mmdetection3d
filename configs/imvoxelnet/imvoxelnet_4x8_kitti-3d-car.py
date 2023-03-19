@@ -101,11 +101,11 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
+    samples_per_gpu=2,
     workers_per_gpu=4,
     train=dict(
         type='RepeatDataset',
-        times=3,
+        times=1,
         dataset=dict(
             type=dataset_type,
             data_root=data_root,
@@ -145,7 +145,7 @@ optimizer = dict(
         custom_keys={'backbone': dict(lr_mult=0.1, decay_mult=1.0)}))
 optimizer_config = dict(grad_clip=dict(max_norm=35., norm_type=2))
 lr_config = dict(policy='step', step=[8, 11])
-total_epochs = 12
+total_epochs = 6
 
 checkpoint_config = dict(interval=1, max_keep_ckpts=1)
 log_config = dict(

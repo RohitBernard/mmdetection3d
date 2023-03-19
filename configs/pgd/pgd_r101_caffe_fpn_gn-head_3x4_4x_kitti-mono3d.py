@@ -87,7 +87,7 @@ train_pipeline = [
         ]),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFileMono3D'),
+    # dict(type='LoadImageFromFileMono3D'),
     dict(
         type='MultiScaleFlipAug',
         scale_factor=1.0,
@@ -100,7 +100,7 @@ test_pipeline = [
                 type='DefaultFormatBundle3D',
                 class_names=class_names,
                 with_label=False),
-            dict(type='Collect3D', keys=['img']),
+            dict(type='Collect3D', keys=['img'], meta_keys=['img_shape','cam2img', 'scale_factor', 'pad_shape','trans_mat','box_type_3d','box_mode_3d','img_norm_cfg']),
         ])
 ]
 data = dict(
@@ -123,5 +123,5 @@ lr_config = dict(
     step=[32, 44])
 total_epochs = 48
 runner = dict(type='EpochBasedRunner', max_epochs=48)
-evaluation = dict(interval=2)
+evaluation = dict(interval=1)
 checkpoint_config = dict(interval=8)

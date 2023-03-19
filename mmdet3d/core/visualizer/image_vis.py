@@ -202,5 +202,4 @@ def draw_camera_bbox3d_on_img(bboxes3d,
     uv_origin = points_cam2img(points_3d, cam2img)
     uv_origin = (uv_origin - 1).round()
     imgfov_pts_2d = uv_origin[..., :2].reshape(num_bbox, 8, 2).numpy()
-
     return plot_rect3d_on_img(img, num_bbox, imgfov_pts_2d, color, thickness)
