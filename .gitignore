@@ -118,7 +118,7 @@ work_dirs/
 exps/
 *~
 mmdet3d/.mim
-"\\/"
+'\'/
 
 # Pytorch
 *.pth
