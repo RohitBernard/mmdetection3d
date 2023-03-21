@@ -5,6 +5,7 @@ import cv2
 import os
 import time
 import pickle
+import math
 import numpy as np
 import torch
 from mmcv.parallel import collate, scatter
@@ -86,13 +87,66 @@ def main():
     with open(os.path.join(root, "gt_data.json"), 'rb') as f:
         data = json.load(f)
 
-    for d in data["data"]:
+    out_data = {"data":[]}
+    # root = ""
+    # with open('mmdetection3d/data/siemens_factory/siemens_train.pkl', 'rb') as f:
+    #     data = pickle.load(f)
+
+    cam_extrinsic = np.array(json_data['cam_extrinsic'])
+    cam_yaw = math.radians(json_data['yaw'])
+    # for d in data:
+    for d in data['data']:
+        # if 'Camera3' not in d["image"]['image_path']:
+        #     continue
+        # img = cv2.imread(root+d["image"]['image_path'])
         img = cv2.imread(root+d["filename"])
-        result, data = inference(model, img, json_data)
-        print(result)
-        draw_bboxes(img, result, json_data["cam_intrinsic"])
+        result, inf_data = inference(model, img, json_data)
+        print('result',result, end="\n\n\n")
+        # print(d)
+        # print('inference data',inf_data, end="\n\n\n")
+        inferences = deepcopy(result[0]['img_bbox']['boxes_3d'].tensor).numpy()
+        # print('i1',inferences)
+        for i in range(len(inferences)):
+            pos = inferences[i,:3]
+            yaw = inferences[i,-1]
+            pos = np.hstack((pos,[1]))
+            pos *= [1,-1,-1,1]
+            worldPos = cam_extrinsic.dot(pos)
+            worldPos /= worldPos[-1]
+            worldYaw = cam_yaw - yaw
+            while(worldYaw>math.pi):
+                worldYaw-=2*math.pi
+            while(worldYaw<-math.pi):
+                worldYaw+=2*math.pi
+            inferences[i,:] = np.hstack((worldPos[:3],inferences[i,3:6], worldYaw))
+        # print('gt',d['humans'])
+        # print('gt',d['annos']['location'])
+        print('GT',d, end="\n\n\n")
+        # print('i2',inferences)
+        draw_bboxes(img, result, json_data["viz_intrinsic"])
         if cv2.waitKey(0) == ord('q'):
             break
+        frame = {
+            "filename": d["filename"],
+            'image_shape': d['image_shape'],
+            'humans': []
+        }
+        for i in inferences:
+            human = {
+                'x':float(i[0]),
+                'y':float(i[1]+i[4]/2),
+                'z':float(i[2]),
+                'height':float(i[4]),
+                'width':float(i[3]),
+                'depth':float(i[5]),
+                'yaw':float(i[6]),
+            }
+            frame['humans'].append(human)
+        out_data['data'].append(frame)
+        # break
+    with open('inferences.json','w') as f:
+        json.dump(out_data, f)
+
 
 
 def inference(model, image, img_info):
