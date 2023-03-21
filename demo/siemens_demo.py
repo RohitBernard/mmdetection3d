@@ -101,7 +101,7 @@ def main():
         # img = cv2.imread(root+d["image"]['image_path'])
         img = cv2.imread(root+d["filename"])
         result, inf_data = inference(model, img, json_data)
-        print('result',result, end="\n\n\n")
+        # print('result',result, end="\n\n\n")
         # print(d)
         # print('inference data',inf_data, end="\n\n\n")
         inferences = deepcopy(result[0]['img_bbox']['boxes_3d'].tensor).numpy()
@@ -121,7 +121,7 @@ def main():
             inferences[i,:] = np.hstack((worldPos[:3],inferences[i,3:6], worldYaw))
         # print('gt',d['humans'])
         # print('gt',d['annos']['location'])
-        print('GT',d, end="\n\n\n")
+        # print('GT',d, end="\n\n\n")
         # print('i2',inferences)
         draw_bboxes(img, result, json_data["viz_intrinsic"])
         if cv2.waitKey(0) == ord('q'):
