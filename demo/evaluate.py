@@ -8,6 +8,7 @@ import pickle
 import math
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 from mmcv.parallel import collate, scatter
 
 from mmdet3d.apis import init_model, show_result_meshlab
@@ -79,7 +80,9 @@ def main():
     with open('mmdetection3d/data/siemens_factory/siemens_val.pkl', 'rb') as f:
         data = pickle.load(f)
 
+    print("length of the val set", len(data))
     dist_errors = []
+    inference_times = []
     true_positives = 0
     false_positives = 0
     false_negatives = 0
@@ -88,11 +91,14 @@ def main():
 
     for d in data:
         img = cv2.imread(root+d["image"]['image_path'])
+        start_time = time.time()
         result, inf_data = inference(model, img, json_data)
+        inf_time = time.time() - start_time
+        inference_times.append(inf_time)
         inferences = deepcopy(result[0]['img_bbox']['boxes_3d'].tensor).numpy()
 
         ## Thresholding predictions
-        
+
         # filtered_inferences = np.zeros((0, 3))
         # for i in range(len(result[0]["img_bbox"]["scores_3d"])):
         #     if result[0]["img_bbox"]["scores_3d"][i].item() > threshold:
@@ -124,13 +130,21 @@ def main():
     
     avg_error = sum(dist_errors)/len(dist_errors)
     accuracy = true_positives / (true_positives + false_negatives + false_positives)
+    avg_inf_times = sum(inference_times)/len(inference_times)
+    precision = true_positives / (true_positives + false_positives)
+    recall = true_positives / (true_positives + false_negatives)
+
     print(f"Avgerage Error = {avg_error}\n\
         True Positives : {true_positives}\n\
         False Positives : {false_positives}\n\
         False Negatives : {false_negatives}\n\
+        Precision : {precision}\n\
+        Recall : {recall}\n\
         Accuracy = {accuracy*100}%")
-    # print(max(dist_errors))
-    # print(min(dist_errors))
+    print("Maximum distance error", max(dist_errors))
+    print("Minimum distance error", min(dist_errors))
+    print("Average Inference time ", avg_inf_times)
+    print("Average Inference FPS: ", 1/avg_inf_times)
 
         
 def draw_bboxes(img, result, cam_intrinsic):

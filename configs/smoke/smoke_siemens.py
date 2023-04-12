@@ -9,7 +9,7 @@ optimizer_config = dict(grad_clip=None)
 lr_config = dict(policy='step', warmup=None, step=[50])
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=48)
+runner = dict(type='EpochBasedRunner', max_epochs=36)
 log_config = dict(interval=10)
 
 find_unused_parameters = True

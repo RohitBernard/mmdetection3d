@@ -725,7 +725,7 @@ def kitti_eval(gt_annos,
         mAP40_3d, mAP40_aos = do_eval(gt_annos, dt_annos,
                                       current_classes, min_overlaps,
                                       eval_types)
-
+    print("debug", mAP11_3d, mAP11_bbox, mAP11_bev)
     ret_dict = {}
     difficulty = ['easy', 'moderate', 'hard']
 
