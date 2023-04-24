@@ -5,7 +5,7 @@ import sys
 import pickle
 from tools.data_converter import kitti_converter as kitti
 
-f = open(sys.argv[1])
+f = open(os.path.join(sys.argv[1],sys.argv[2]))
 custom_data = json.load(f)
 
 
@@ -24,7 +24,7 @@ for i, data in enumerate(custom_data["data"]):
     rotation_y = []
     alpha = []
     data_dict["image"]["image_idx"] = i
-    data_dict["image"]["image_path"] = "Data/siemens_factory" + data["filename"]
+    data_dict["image"]["image_path"] = os.path.join(sys.argv[1], data["filename"][1:])
     data_dict["image"]["image_shape"] = np.array(data["image_shape"]) 
     calib3x3 = np.array(data["camera_intrinsic"]).reshape(3, 3)
     calib4x4 = np.vstack((np.hstack((calib3x3,np.array([[0,0,0]]).T)),np.array([[0,0,0,1]])))
@@ -59,9 +59,9 @@ for i, data in enumerate(custom_data["data"]):
 
 
 path = 'mmdetection3d/data/siemens_factory'
-with open(os.path.join(path,sys.argv[2]), 'wb') as f:
+with open(os.path.join(path,sys.argv[3]), 'wb') as f:
     pickle.dump(complete_data, f)
-info_train_path = os.path.join(path, sys.argv[2])
+info_train_path = os.path.join(path, sys.argv[3])
 
 root_path = ""
 kitti.export_2d_annotation(root_path, info_train_path)
