@@ -127,11 +127,11 @@ def main():
         # print("print boxes_3d_gt", boxes_3d_gt)
         # img = cv2.imread(root+d["filename"])
         result, inf_data = inference(model, img, json_data)
+        print("gt", d['annos']['location'])
+        print("result", result)
         # print('result',result, end="\n\n\n")
-        print('gt',d)
         # print('inference data',inf_data, end="\n\n\n")
         inferences = deepcopy(result[0]['img_bbox']['boxes_3d'].tensor).numpy()
-        print("print predicted 3d boxes", inferences)
         # print('i1',inferences)
         # for i in range(len(inferences)):
         #     pos = inferences[i,:3]
@@ -153,6 +153,7 @@ def main():
         # draw_bboxes(img, boxes_3d_gt, json_data["viz_intrinsic"], color=(0, 255, 0))
         # if not args.with_offset:
         draw_bboxes(img, result[0]['img_bbox']['boxes_3d'], json_data["cam_intrinsic"], color=(0, 0, 255))
+        project_point(img, d['annos']['location'], json_data["cam_intrinsic"], color=(0, 255, 0))
         # draw_bboxes(img, result, json_data["viz_intrinsic"], color=(0, 0, 255))
         if cv2.waitKey(0) == ord('q'):
             break
@@ -263,6 +264,28 @@ def draw_bboxes(img, raw_preds, cam_intrinsic, color):
         img = cv2.line(img, points_2d[4], points_2d[7], color=color, thickness=2)
         img = cv2.line(img, points_2d[5], points_2d[6], color=color, thickness=2)
         img = cv2.line(img, points_2d[1], points_2d[2], color=color, thickness=2)
+    cv2.imshow("boxes", img)
+
+
+def project_point(img, locations, cam_intrinsic, color):
+    all_points = []
+    for i in range(len(locations)):
+        corners = locations[i]
+        points_2d = cv2.projectPoints(corners, np.array([0,0,0], dtype=np.float32), np.array([0,0,0], dtype=np.float32), np.array(cam_intrinsic), None)[0].reshape(1,2).astype(int)
+        for p in points_2d:
+            img = cv2.circle(img, (p[0], p[1]), radius=0, color=(0, 255, 0), thickness=4)
+        # img = cv2.line(img, points_2d[0], points_2d[1], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[1], points_2d[5], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[5], points_2d[4], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[4], points_2d[0], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[3], points_2d[2], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[2], points_2d[6], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[6], points_2d[7], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[7], points_2d[3], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[0], points_2d[3], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[4], points_2d[7], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[5], points_2d[6], color=color, thickness=2)
+        # img = cv2.line(img, points_2d[1], points_2d[2], color=color, thickness=2)
     cv2.imshow("boxes", img)
             
 

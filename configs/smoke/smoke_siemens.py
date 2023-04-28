@@ -9,7 +9,7 @@ optimizer_config = dict(grad_clip=None)
 lr_config = dict(policy='step', warmup=None, step=[50])
 
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=36)
+runner = dict(type='EpochBasedRunner', max_epochs=72)
 log_config = dict(interval=10)
 
 find_unused_parameters = True
@@ -28,7 +28,7 @@ train_pipeline = [
         with_bbox_depth=True),
     dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
     dict(type='RandomShiftScale', shift_scale=(0.2, 0.4), aug_prob=0.3),
-    dict(type='AffineResize', img_scale=(1280, 384), down_ratio=4),
+    dict(type='AffineResize', img_scale=(1280, 720), down_ratio=4),
     dict(type='Normalize', **img_norm_cfg),
     dict(type='Pad', size_divisor=32),
     dict(type='DefaultFormatBundle3D', class_names=class_names),
@@ -40,13 +40,13 @@ train_pipeline = [
         ]),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFileMono3D'),
+    # dict(type='LoadImageFromFileMono3D'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1280, 384),
+        img_scale=(1280, 720),
         flip=False,
         transforms=[
-            dict(type='AffineResize', img_scale=(1280, 384), down_ratio=4),
+            dict(type='AffineResize', img_scale=(1280, 720), down_ratio=4),
             dict(type='Normalize', **img_norm_cfg),
             dict(type='Pad', size_divisor=32),
             dict(
