@@ -16,6 +16,15 @@ from mmdet3d.core.bbox import get_box_type
 from mmdet3d.datasets.pipelines import Compose
 from copy import deepcopy
 
+CAM_INTRINSIC = [[739.0083618164062, 0.0, 640.0],
+                 [0.0, 623.5382080078125, 360.0],
+                 [0.0, 0.0, 1.0]]
+
+CAM_EXTRINSIC = [[-1.0, 0.0, 0.0, 0.0],
+                 [0.0, 1.0, 0.0, 1.0],
+                 [0.0, 0.0, 1.0, 25.0],
+                 [0.0, 0.0, 0.0, 1.0]]
+
 
 def main():
 
@@ -34,7 +43,6 @@ def main():
 
     parser = ArgumentParser()
     # parser.add_argument('image', help='image file')
-    parser.add_argument('ann', help='ann file')
     parser.add_argument('config', help='Config file')
     parser.add_argument('checkpoint', help='Checkpoint file')
     parser.add_argument(
@@ -59,9 +67,6 @@ def main():
 
     # build the model from a config file and a checkpoint file
     model = init_model(args.config, args.checkpoint, device=args.device)
-
-    f = open(args.ann)
-    json_data = json.load(f)
 
     #####
     # RUN INFERENCE ON A VIDEO
@@ -101,8 +106,6 @@ def main():
         data = pickle.load(f)
     out = cv2.VideoWriter('output_video_with_gt.avi',cv2.VideoWriter_fourcc(*'DIVX'), 8, (1280,720))
 
-    cam_extrinsic = np.array(json_data['cam_extrinsic'])
-    cam_yaw = math.radians(json_data['yaw'])
     for d in data:
     # for d in data['data']:
         boxes_3d_gt = []
@@ -126,7 +129,7 @@ def main():
         # boxes_3d_gt = CameraInstance3DBoxes(boxes_3d_gt)
         # print("print boxes_3d_gt", boxes_3d_gt)
         # img = cv2.imread(root+d["filename"])
-        result, inf_data = inference(model, img, json_data)
+        result, inf_data = inference(model, img)
         print("gt", d['annos']['location'])
         print("result", result)
         # print('result',result, end="\n\n\n")
@@ -152,8 +155,8 @@ def main():
         # print('i2',inferences)
         # draw_bboxes(img, boxes_3d_gt, json_data["viz_intrinsic"], color=(0, 255, 0))
         # if not args.with_offset:
-        draw_bboxes(img, result[0]['img_bbox']['boxes_3d'], json_data["cam_intrinsic"], color=(0, 0, 255))
-        project_point(img, d['annos']['location'], json_data["cam_intrinsic"], color=(0, 255, 0))
+        draw_bboxes(img, result[0]['img_bbox']['boxes_3d'], CAM_INTRINSIC, color=(0, 0, 255))
+        project_point(img, d['annos']['location'], CAM_INTRINSIC, color=(0, 255, 0))
         # draw_bboxes(img, result, json_data["viz_intrinsic"], color=(0, 0, 255))
         if cv2.waitKey(0) == ord('q'):
             break
@@ -182,7 +185,7 @@ def main():
         json.dump(out_data, f)
 
 
-def inference(model, image, img_info):
+def inference(model, image):
     """Inference image with the monocular 3D detector.
 
     Args:
@@ -216,7 +219,7 @@ def inference(model, image, img_info):
 
     # camera points to image conversion
     if box_mode_3d == Box3DMode.CAM:
-        data['img_info'].update(dict(cam_intrinsic=img_info['cam_intrinsic']))
+        data['img_info'].update(dict(cam_intrinsic=CAM_INTRINSIC))
 
 
     data['img'] = image

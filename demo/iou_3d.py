@@ -15,11 +15,19 @@ from mmdet3d.core.bbox import get_box_type
 from mmdet3d.datasets.pipelines import Compose
 from copy import deepcopy
 
+CAM_INTRINSIC = [[739.0083618164062, 0.0, 640.0],
+                 [0.0, 623.5382080078125, 360.0],
+                 [0.0, 0.0, 1.0]]
+
+CAM_EXTRINSIC = [[-1.0, 0.0, 0.0, 0.0],
+                 [0.0, 1.0, 0.0, 1.0],
+                 [0.0, 0.0, 1.0, 25.0],
+                 [0.0, 0.0, 0.0, 1.0]]
+
 def main():
 
     parser = ArgumentParser()
     # parser.add_argument('image', help='image file')
-    parser.add_argument('ann', help='ann file')
     parser.add_argument('config', help='Config file')
     parser.add_argument('checkpoint', help='Checkpoint file')
     parser.add_argument(
@@ -34,9 +42,6 @@ def main():
     # build the model from a config file and a checkpoint file
     model = init_model(args.config, args.checkpoint, device=args.device)
 
-    f = open(args.ann)
-    json_data = json.load(f)
-
     #####
     # RUN INFERENCE ON A SET OF IMAGES
     #####
@@ -44,9 +49,6 @@ def main():
     with open('mmdetection3d/data/siemens_factory/siemens_val.pkl', 'rb') as f:
         data = pickle.load(f)
 
-    # cam_extrinsic = np.array(json_data['cam_extrinsic'])
-    # cam_intrinsic = json_data["viz_intrinsic"]
-    # cam_yaw = math.radians(json_data['yaw'])
     # corners_3d_boxes = []
     true_positives = 0
     false_positives = 0
@@ -69,7 +71,7 @@ def main():
             boxes_3d_gt.append(box_3d_gt)
         boxes_3d_gt = CameraInstance3DBoxes(boxes_3d_gt)
         img = cv2.imread(d["image"]['image_path'])
-        result, inf_data = inference(model, img, json_data)
+        result, inf_data = inference(model, img)
         boxes_3d_preds = result[0]['img_bbox']['boxes_3d']
         if args.axis_aligned:
             axis_aligned_tensor = boxes_3d_preds.tensor
@@ -192,7 +194,7 @@ def plot_pr_curve(recalls, precisions, threshold):
     plt.show()
 
 
-def inference(model, image, img_info):
+def inference(model, image):
     """Inference image with the monocular 3D detector.
 
     Args:
@@ -226,7 +228,7 @@ def inference(model, image, img_info):
 
     # camera points to image conversion
     if box_mode_3d == Box3DMode.CAM:
-        data['img_info'].update(dict(cam_intrinsic=img_info['cam_intrinsic']))
+        data['img_info'].update(dict(cam_intrinsic=CAM_INTRINSIC))
 
 
     data['img'] = image

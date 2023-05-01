@@ -1,3 +1,5 @@
+## Config file for evaluation and visualization
+
 _base_ = [
     '../_base_/datasets/siemens-mono3d.py', '../_base_/models/smoke.py',
     '../_base_/default_runtime.py'
@@ -40,7 +42,7 @@ train_pipeline = [
         ]),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFileMono3D'),
+    # dict(type='LoadImageFromFileMono3D'),
     dict(
         type='MultiScaleFlipAug',
         img_scale=(1280, 720),
