@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from mmcv.parallel import collate, scatter
 
-from mmdet3d.apis import init_model, show_result_meshlab
+from mmdet3d.apis import init_model
 from mmdet3d.core import (Box3DMode, CameraInstance3DBoxes)
 from mmdet3d.core.bbox import get_box_type
 from mmdet3d.datasets.pipelines import Compose
