@@ -18,12 +18,22 @@ from mmdet3d.datasets.pipelines import Compose
 from copy import deepcopy
 
 
+CAM_INTRINSIC = [[739.0083618164062, 0.0, 640.0],
+                 [0.0, 623.5382080078125, 360.0],
+                 [0.0, 0.0, 1.0]]
+
+CAM_EXTRINSIC = [[-1.00000,	0.00000,	0.00000,	0.00000],
+                 [0.00000,	0.81915,	0.57358,	10.00000],
+                 [0.00000,	-0.57358,	0.81915,	25.00000],
+                 [0.00000,	0.00000, 	0.00000,	1.00000]]
+
+
 def main():
 
 
     parser = ArgumentParser()
     # parser.add_argument('image', help='image file')
-    parser.add_argument('ann', help='ann file')
+    # parser.add_argument('ann', help='ann file')
     parser.add_argument('config', help='Config file')
     parser.add_argument('checkpoint', help='Checkpoint file')
     parser.add_argument(
@@ -45,8 +55,8 @@ def main():
     # build the model from a config file and a checkpoint file
     model = init_model(args.config, args.checkpoint, device=args.device)
 
-    f = open(args.ann)
-    json_data = json.load(f)
+    # f = open(args.ann)
+    # json_data = json.load(f)
 
     #####
     # RUN INFERENCE ON A VIDEO
@@ -92,7 +102,7 @@ def main():
     for d in data:
         img = cv2.imread(root+d["image"]['image_path'])
         start_time = time.time()
-        result, inf_data = inference(model, img, json_data)
+        result, inf_data = inference(model, img)
         inf_time = time.time() - start_time
         inference_times.append(inf_time)
         inferences = deepcopy(result[0]['img_bbox']['boxes_3d'].tensor).numpy()
@@ -147,30 +157,30 @@ def main():
     print("Average Inference FPS: ", 1/avg_inf_times)
 
         
-def draw_bboxes(img, result, cam_intrinsic):
-    raw_preds = result[0]['img_bbox']['boxes_3d']
-    preds = raw_preds.tensor.numpy()
-    boxes = raw_preds.corners.numpy()
-    # print(result[0]['img_bbox']['labels_3d'])
-    for i in range(len(boxes)):
-        pos = preds[i,:3]
-        corners = boxes[i]
-        points_2d = cv2.projectPoints(corners, np.array([0,0,0], dtype=np.float32), np.array([0,0,0], dtype=np.float32), np.array(cam_intrinsic), None)[0].reshape(8,2).astype(int)
-        # print(pos)
-        # print(points_2d[0])
-        img = cv2.line(img, points_2d[0], points_2d[1], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[1], points_2d[5], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[5], points_2d[4], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[4], points_2d[0], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[3], points_2d[2], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[2], points_2d[6], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[6], points_2d[7], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[7], points_2d[3], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[0], points_2d[3], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[4], points_2d[7], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[5], points_2d[6], color=(0,0,255), thickness=2)
-        img = cv2.line(img, points_2d[1], points_2d[2], color=(0,0,255), thickness=2)
-    cv2.imshow("boxes", img)
+# def draw_bboxes(img, result, cam_intrinsic):
+#     raw_preds = result[0]['img_bbox']['boxes_3d']
+#     preds = raw_preds.tensor.numpy()
+#     boxes = raw_preds.corners.numpy()
+#     # print(result[0]['img_bbox']['labels_3d'])
+#     for i in range(len(boxes)):
+#         pos = preds[i,:3]
+#         corners = boxes[i]
+#         points_2d = cv2.projectPoints(corners, np.array([0,0,0], dtype=np.float32), np.array([0,0,0], dtype=np.float32), np.array(cam_intrinsic), None)[0].reshape(8,2).astype(int)
+#         # print(pos)
+#         # print(points_2d[0])
+#         img = cv2.line(img, points_2d[0], points_2d[1], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[1], points_2d[5], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[5], points_2d[4], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[4], points_2d[0], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[3], points_2d[2], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[2], points_2d[6], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[6], points_2d[7], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[7], points_2d[3], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[0], points_2d[3], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[4], points_2d[7], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[5], points_2d[6], color=(0,0,255), thickness=2)
+#         img = cv2.line(img, points_2d[1], points_2d[2], color=(0,0,255), thickness=2)
+#     cv2.imshow("boxes", img)
 
 
 
@@ -216,7 +226,7 @@ def detection_metric(gt_humans, inf_humans):
 
 
 
-def inference(model, image, img_info):
+def inference(model, image):
     """Inference image with the monocular 3D detector.
 
     Args:
@@ -250,7 +260,7 @@ def inference(model, image, img_info):
 
     # camera points to image conversion
     if box_mode_3d == Box3DMode.CAM:
-        data['img_info'].update(dict(cam_intrinsic=img_info['cam_intrinsic']))
+        data['img_info'].update(dict(cam_intrinsic=CAM_INTRINSIC))
 
 
     data['img'] = image
@@ -259,6 +269,7 @@ def inference(model, image, img_info):
     data['cam2img'] = data['img_info']['cam_intrinsic']
 
 
+    # ipdb.set_trace()
     data = test_pipeline(data)
 
     data = collate([data], samples_per_gpu=1)

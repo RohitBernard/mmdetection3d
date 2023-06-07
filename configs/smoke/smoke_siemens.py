@@ -40,7 +40,7 @@ train_pipeline = [
         ]),
 ]
 test_pipeline = [
-    dict(type='LoadImageFromFileMono3D'),
+    # dict(type='LoadImageFromFileMono3D'),
     dict(
         type='MultiScaleFlipAug',
         img_scale=(1280, 720),

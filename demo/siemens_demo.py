@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import ipdb
 from argparse import ArgumentParser
 import json
 import cv2
@@ -20,10 +21,15 @@ CAM_INTRINSIC = [[739.0083618164062, 0.0, 640.0],
                  [0.0, 623.5382080078125, 360.0],
                  [0.0, 0.0, 1.0]]
 
-CAM_EXTRINSIC = [[-1.0, 0.0, 0.0, 0.0],
-                 [0.0, 1.0, 0.0, 1.0],
-                 [0.0, 0.0, 1.0, 25.0],
-                 [0.0, 0.0, 0.0, 1.0]]
+# CAM_EXTRINSIC = [[-1.0, 0.0, 0.0, 0.0],
+#                  [0.0, 1.0, 0.0, 1.0],
+#                  [0.0, 0.0, 1.0, 25.0],
+#                  [0.0, 0.0, 0.0, 1.0]]
+
+CAM_EXTRINSIC = [[-1.00000,	0.00000,	0.00000,	0.00000],
+                 [0.00000,	0.81915,	0.57358,	10.00000],
+                 [0.00000,	-0.57358,	0.81915,	25.00000],
+                 [0.00000,	0.00000, 	0.00000,	1.00000]]
 
 
 def main():
@@ -136,19 +142,22 @@ def main():
         inferences = deepcopy(result[0]['img_bbox']['boxes_3d'].tensor).numpy()
         print("print predicted 3d boxes", inferences)
         # print('i1',inferences)
-        # for i in range(len(inferences)):
-        #     pos = inferences[i,:3]
-        #     yaw = inferences[i,-1]
-        #     pos = np.hstack((pos,[1]))
-        #     pos *= [1,-1,-1,1]
-        #     worldPos = cam_extrinsic.dot(pos)
-        #     worldPos /= worldPos[-1]
-        #     worldYaw = cam_yaw - yaw
-        #     while(worldYaw>math.pi):
-        #         worldYaw-=2*math.pi
-        #     while(worldYaw<-math.pi):
-        #         worldYaw+=2*math.pi
-        #     inferences[i,:] = np.hstack((worldPos[:3],inferences[i,3:6], worldYaw))
+        cam_extrinsic = np.array(CAM_EXTRINSIC)
+        for i in range(len(inferences)):
+            pos = inferences[i,:3]
+            print("Latest model Predicted of position in camera frame:", pos)
+            yaw = inferences[i,-1]
+            pos = np.hstack((pos,[1]))
+            pos *= [1,-1,-1,1]
+            worldPos = cam_extrinsic.dot(pos)
+            worldPos /= worldPos[-1]
+            # print("Latest Model prediction of position in world frame", worldPos)
+            # worldYaw = cam_yaw - yaw
+            # while(worldYaw>math.pi):
+            #     worldYaw-=2*math.pi
+            # while(worldYaw<-math.pi):
+            #     worldYaw+=2*math.pi
+            # inferences[i,:] = np.hstack((worldPos[:3],inferences[i,3:6], worldYaw))
         # print('gt',d['humans'])
         # print('gt',d['annos']['location'])
         # print('GT',d, end="\n\n\n")
@@ -227,6 +236,7 @@ def inference(model, image):
     data['cam2img'] = data['img_info']['cam_intrinsic']
 
 
+    # ipdb.set_trace()
     data = test_pipeline(data)
 
     data = collate([data], samples_per_gpu=1)
@@ -247,6 +257,27 @@ def inference(model, image):
 def draw_bboxes(img, raw_preds, cam_intrinsic, color):
     preds = raw_preds.tensor.numpy()
     boxes = raw_preds.corners.numpy()
+    # print("corners are", boxes)
+    print("(x0, y0, z0) and (x0, y1, z0) of human far away in image (camera frame):", boxes[1][0], boxes[1][3])
+    print("(x0, y0, z0) and (x0, y1, z0) of human close in image (camera frame):", boxes[3][0], boxes[3][3])
+    print("\n")
+    print("Math distance between points (x0, y0, z0) and (x0, y1, z0) of a human far away in the image (camera frame):", math.dist(boxes[1][0], boxes[1][3]))
+    print("Math distance between points (x0, y0, z0) and (x0, y1, z0) of a human close in the image (camera frame):", math.dist(boxes[3][0], boxes[3][3]))
+
+    worldPos1 = convert_coord_cam_to_world(boxes[1][0], np.array(CAM_EXTRINSIC))
+    worldPos2 = convert_coord_cam_to_world(boxes[1][3], np.array(CAM_EXTRINSIC))
+
+    worldPos3 = convert_coord_cam_to_world(boxes[3][0], np.array(CAM_EXTRINSIC))
+    worldPos4 = convert_coord_cam_to_world(boxes[3][3], np.array(CAM_EXTRINSIC))
+
+    print("\n")
+    # print("(x0, y0, z0) and (x0, y1, z0) of human far away in image (world frame):", worldPos1, worldPos2)
+    # print("(x0, y0, z0) and (x0, y1, z0) of human close in image (world frame):", worldPos3, worldPos4)
+    # print("\n")
+    print("Math distance between (x0, y0, z0) and (x0, y1, z0) of human far away in the image (World Frame):", math.dist(worldPos1, worldPos2))
+    print("Math distance between (x0, y0, z0) and (x0, y1, z0) of human close in the image  (World Frame):", math.dist(worldPos3, worldPos4))
+    print("\n")
+
     # print(result[0]['img_bbox']['labels_3d'])
     for i in range(len(boxes)):
         pos = preds[i,:3]
@@ -254,6 +285,10 @@ def draw_bboxes(img, raw_preds, cam_intrinsic, color):
         points_2d = cv2.projectPoints(corners, np.array([0,0,0], dtype=np.float32), np.array([0,0,0], dtype=np.float32), np.array(cam_intrinsic), None)[0].reshape(8,2).astype(int)
         # print(pos)
         # print(points_2d[0])
+        if i == 1:
+            print("Math distance between (x0, y0, z0) and (x0, y1, z0) of human far away in the image (Image Frame):", math.dist(points_2d[0], points_2d[3]))
+        if i == 3:
+            print("Math distance between (x0, y0, z0) and (x0, y1, z0) of human close in the image  (Image Frame):", math.dist(points_2d[0], points_2d[3]))   
         img = cv2.line(img, points_2d[0], points_2d[1], color=color, thickness=2)
         img = cv2.line(img, points_2d[1], points_2d[5], color=color, thickness=2)
         img = cv2.line(img, points_2d[5], points_2d[4], color=color, thickness=2)
@@ -267,7 +302,14 @@ def draw_bboxes(img, raw_preds, cam_intrinsic, color):
         img = cv2.line(img, points_2d[5], points_2d[6], color=color, thickness=2)
         img = cv2.line(img, points_2d[1], points_2d[2], color=color, thickness=2)
     cv2.imshow("boxes", img)
-            
+
+
+def convert_coord_cam_to_world(points, cam_extrinsic):
+    pos = np.hstack((points,[1]))
+    pos *= [1,-1,-1,1]
+    worldPos = cam_extrinsic.dot(pos)
+    worldPos /= worldPos[-1]
+    return worldPos
 
 
 if __name__ == '__main__':
