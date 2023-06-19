@@ -235,7 +235,6 @@ def inference(model, image):
     data['img_shape'] = image.shape
     data['cam2img'] = data['img_info']['cam_intrinsic']
 
-
     # ipdb.set_trace()
     data = test_pipeline(data)
 

@@ -4,14 +4,11 @@ from argparse import ArgumentParser
 import json
 import cv2
 import os
-import time
-import pickle
-import math
 import numpy as np
 import torch
 from mmcv.parallel import collate, scatter
 
-from mmdet3d.apis import init_model, show_result_meshlab
+from mmdet3d.apis import init_model
 from mmdet3d.core import (Box3DMode, CameraInstance3DBoxes)
 from mmdet3d.core.bbox import get_box_type
 from mmdet3d.datasets.pipelines import Compose
@@ -30,7 +27,6 @@ CAM_EXTRINSIC = [[-1.00000,	0.00000,	0.00000,	0.00000],
 def main():
 
     parser = ArgumentParser()
-    # parser.add_argument('image', help='image file')
     parser.add_argument('config', help='Config file')
     parser.add_argument('checkpoint', help='Checkpoint file')
     parser.add_argument(
@@ -108,8 +104,6 @@ def main():
             #     worldYaw+=2*math.pi
             # inferences[i,:] = np.hstack((worldPos[:3],inferences[i,3:6], worldYaw))
             inferences[i,:6] = np.hstack((worldPos[:3],inferences[i,3:6]))
-        # if not args.with_offset:
-        # draw_bboxes(img, result[0]['img_bbox']['boxes_3d'], CAM_INTRINSIC, color=(0, 0, 255))
         if cv2.waitKey(0) == ord('q'):
             break
         frame = {
@@ -192,30 +186,6 @@ def inference(model, image):
     with torch.no_grad():
         result = model(return_loss=False, rescale=True, **data)
     return result, data
-
-
-def draw_bboxes(img, raw_preds, cam_intrinsic, color):
-    preds = raw_preds.tensor.numpy()
-    boxes = raw_preds.corners.numpy()
-
-    for i in range(len(boxes)):
-        pos = preds[i,:3]
-        corners = boxes[i]
-        points_2d = cv2.projectPoints(corners, np.array([0,0,0], dtype=np.float32), np.array([0,0,0], dtype=np.float32), np.array(cam_intrinsic), None)[0].reshape(8,2).astype(int)
-
-        img = cv2.line(img, points_2d[0], points_2d[1], color=color, thickness=2)
-        img = cv2.line(img, points_2d[1], points_2d[5], color=color, thickness=2)
-        img = cv2.line(img, points_2d[5], points_2d[4], color=color, thickness=2)
-        img = cv2.line(img, points_2d[4], points_2d[0], color=color, thickness=2)
-        img = cv2.line(img, points_2d[3], points_2d[2], color=color, thickness=2)
-        img = cv2.line(img, points_2d[2], points_2d[6], color=color, thickness=2)
-        img = cv2.line(img, points_2d[6], points_2d[7], color=color, thickness=2)
-        img = cv2.line(img, points_2d[7], points_2d[3], color=color, thickness=2)
-        img = cv2.line(img, points_2d[0], points_2d[3], color=color, thickness=2)
-        img = cv2.line(img, points_2d[4], points_2d[7], color=color, thickness=2)
-        img = cv2.line(img, points_2d[5], points_2d[6], color=color, thickness=2)
-        img = cv2.line(img, points_2d[1], points_2d[2], color=color, thickness=2)
-    cv2.imshow("boxes", img)
 
 
 if __name__ == '__main__':
