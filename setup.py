@@ -217,7 +217,10 @@ if __name__ == '__main__':
             'Programming Language :: Python :: 3.7',
         ],
         license='Apache License 2.0',
-        install_requires=parse_requirements('requirements/runtime.txt'),
+        install_requires=[
+            parse_requirements('requirements/runtime.txt'),
+            parse_requirements('requirements/titanium.txt')
+        ],
         extras_require={
             'all': parse_requirements('requirements.txt'),
             'tests': parse_requirements('requirements/tests.txt'),

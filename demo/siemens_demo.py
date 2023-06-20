@@ -1,5 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import ipdb
+# import ipdb
 from argparse import ArgumentParser
 import json
 import cv2
